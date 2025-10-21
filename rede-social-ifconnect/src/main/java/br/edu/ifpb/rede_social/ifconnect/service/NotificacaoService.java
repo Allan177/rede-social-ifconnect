@@ -15,11 +15,25 @@ public class NotificacaoService {
     @Autowired
     private NotificacaoRepository notificacaoRepository;
 
-    public Notificacao enviarNotificacao(Long usuarioId, String titulo, String mensagem) {
-        if (usuarioId == null || titulo == null || mensagem == null) {
-            throw new IllegalArgumentException("ID de usuário, título e mensagem são obrigatórios para enviar notificação.");
+    // Construtor completo do Notificacao (7 argumentos):
+    // new Notificacao(id, usuarioId, titulo, tipo, mensagem, entidadeOrigemId, dataCriacao, lida)
+
+    public Notificacao enviarNotificacao(Long usuarioId, String titulo, String tipo, String mensagem, Long entidadeOrigemId) {
+        if (usuarioId == null || titulo == null || mensagem == null || tipo == null) {
+            throw new IllegalArgumentException("ID de usuário, título, tipo e mensagem são obrigatórios para enviar notificação.");
         }
-        Notificacao notificacao = new Notificacao(null, usuarioId, titulo, mensagem, false, LocalDateTime.now());
+
+        // CORREÇÃO AQUI: Usando o construtor completo com os 7 argumentos (incluindo o novo campo 'tipo' e 'entidadeOrigemId')
+        Notificacao notificacao = new Notificacao(
+                null, // id (gerado pelo Mongo)
+                usuarioId,
+                titulo,
+                tipo,
+                mensagem,
+                entidadeOrigemId,
+                LocalDateTime.now(), // dataCriacao
+                false // lida
+        );
         return notificacaoRepository.save(notificacao);
     }
 
@@ -28,11 +42,13 @@ public class NotificacaoService {
     }
 
     public List<Notificacao> listarNotificacoesNaoLidasPorUsuario(Long usuarioId) {
-        return notificacaoRepository.findByUsuarioIdAndLidaFalseOrderByDataEnvioDesc(usuarioId);
+        // CORREÇÃO AQUI: Usando o método do repositório que você criou (DataCriacao)
+        return notificacaoRepository.findByUsuarioIdAndLidaFalseOrderByDataCriacaoDesc(usuarioId);
     }
 
     public List<Notificacao> listarNotificacoesPorUsuario(Long usuarioId) {
-        return notificacaoRepository.findByUsuarioIdOrderByDataEnvioDesc(usuarioId);
+        // CORREÇÃO AQUI: Usando o método do repositório que você criou (DataCriacao)
+        return notificacaoRepository.findByUsuarioIdOrderByDataCriacaoDesc(usuarioId);
     }
 
     public List<Notificacao> listarTodasNotificacoes() {

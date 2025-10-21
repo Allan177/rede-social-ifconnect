@@ -4,29 +4,39 @@ import br.edu.ifpb.rede_social.ifconnect.document.Atividade;
 import br.edu.ifpb.rede_social.ifconnect.document.LogSistema;
 import br.edu.ifpb.rede_social.ifconnect.document.Notificacao;
 import br.edu.ifpb.rede_social.ifconnect.entity.*;
-import br.edu.ifpb.rede_social.ifconnect.repository.jpa.*;
+// Importações Corretas para as interfaces DAO (JDBC Manual)
+import br.edu.ifpb.rede_social.ifconnect.repository.jpa.UsuarioDAO;
+import br.edu.ifpb.rede_social.ifconnect.repository.jpa.PostagemDAO;
+// Importações Corretas para os Repositórios JPA (Spring Data)
+import br.edu.ifpb.rede_social.ifconnect.repository.jpa.ComentarioRepository;
+import br.edu.ifpb.rede_social.ifconnect.repository.jpa.CurtidaRepository;
+import br.edu.ifpb.rede_social.ifconnect.repository.jpa.MidiaRepository;
+
 import br.edu.ifpb.rede_social.ifconnect.repository.mongo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import br.edu.ifpb.rede_social.ifconnect.repository.mongo.NotificacaoRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.concurrent.ThreadLocalRandom;
 
+// NOTE: Assumindo que o DataLoader está no pacote raiz 'br.edu.ifpb.rede_social.ifconnect'
 @Component
 @Profile("dev") // Só executa este DataLoader no perfil 'dev'
 public class DataLoader implements CommandLineRunner {
 
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private PostagemRepository postagemRepository;
+    // CORRIGIDO: Injetar as interfaces DAO (JDBC Manual)
+    @Autowired private UsuarioDAO usuarioDAO;
+    @Autowired private PostagemDAO postagemDAO;
+
+    // Repositórios JPA restantes (Spring Data)
     @Autowired private ComentarioRepository comentarioRepository;
     @Autowired private CurtidaRepository curtidaRepository;
     @Autowired private MidiaRepository midiaRepository;
 
+    // Repositórios MongoDB (Spring Data)
     @Autowired private AtividadeRepository atividadeRepository;
     @Autowired private LogSistemaRepository logSistemaRepository;
     @Autowired private NotificacaoRepository notificacaoRepository;
@@ -50,8 +60,10 @@ public class DataLoader implements CommandLineRunner {
         curtidaRepository.deleteAll();
         comentarioRepository.deleteAll();
         midiaRepository.deleteAll();
-        postagemRepository.deleteAll();
-        usuarioRepository.deleteAll();
+
+        // CORRIGIDO: Usar postagemDAO e usuarioDAO
+        postagemDAO.deleteAll();
+        usuarioDAO.deleteAll();
 
         atividadeRepository.deleteAll();
         logSistemaRepository.deleteAll();
@@ -67,9 +79,10 @@ public class DataLoader implements CommandLineRunner {
         Usuario u2 = new Usuario(null, "Bob Souza", "bob" + System.nanoTime() + "@email.com", "senha123", LocalDate.now());
         Usuario u3 = new Usuario(null, "Carlos Lima", "carlos" + System.nanoTime() + "@email.com", "senha123", LocalDate.now());
 
-        u1 = usuarioRepository.save(u1);
-        u2 = usuarioRepository.save(u2);
-        u3 = usuarioRepository.save(u3);
+        // CORRIGIDO: Usar usuarioDAO
+        u1 = usuarioDAO.save(u1);
+        u2 = usuarioDAO.save(u2);
+        u3 = usuarioDAO.save(u3);
         System.out.println("Usuários salvos: " + u1.getNome() + ", " + u2.getNome() + ", " + u3.getNome());
 
         // Postagens
@@ -77,9 +90,10 @@ public class DataLoader implements CommandLineRunner {
         Postagem p2 = new Postagem(null, "Que dia lindo para programar! #Java", LocalDate.now().minusDays(1), u2.getId());
         Postagem p3 = new Postagem(null, "Minha terceira postagem.", LocalDate.now().minusDays(2), u1.getId());
 
-        p1 = postagemRepository.save(p1);
-        p2 = postagemRepository.save(p2);
-        p3 = postagemRepository.save(p3);
+        // CORRIGIDO: Usar postagemDAO
+        p1 = postagemDAO.save(p1);
+        p2 = postagemDAO.save(p2);
+        p3 = postagemDAO.save(p3);
         System.out.println("Postagens salvas: " + p1.getConteudo() + ", " + p2.getConteudo() + ", " + p3.getConteudo());
 
         // Comentários
@@ -122,9 +136,32 @@ public class DataLoader implements CommandLineRunner {
         System.out.println("Logs de Sistema (MongoDB) salvos.");
 
         // Notificações (MongoDB)
+        // Construtor completo: Notificacao(id, usuarioId, titulo, tipo, mensagem, entidadeOrigemId, dataCriacao, lida)
 
-        notificacaoRepository.save(new Notificacao(null, u1.getId(), "CURTIDA", "Bob curtiu sua postagem.", p1.getId(), LocalDateTime.now(), false));
-        notificacaoRepository.save(new Notificacao(null, u1.getId(), "COMENTARIO", "Carlos comentou na sua postagem.", p1.getId(), LocalDateTime.now(), false));
+        // u1 (Alice) é notificada: Bob curtiu a postagem p1
+        notificacaoRepository.save(new Notificacao(
+                null,
+                u1.getId(),
+                "Nova Curtida", // Título
+                "CURTIDA", // Tipo
+                u2.getNome() + " curtiu sua postagem.", // Mensagem
+                p1.getId(), // Entidade Origem ID (Postagem 1)
+                LocalDateTime.now(),
+                false
+        ));
+
+        // u1 (Alice) é notificada: Carlos comentou na postagem p1
+        notificacaoRepository.save(new Notificacao(
+                null,
+                u1.getId(),
+                "Novo Comentário", // Título
+                "COMENTARIO", // Tipo
+                u3.getNome() + " comentou na sua postagem.", // Mensagem
+                p1.getId(), // Entidade Origem ID (Postagem 1)
+                LocalDateTime.now().plusSeconds(1),
+                false
+        ));
+
         System.out.println("Notificações (MongoDB) salvas.");
     }
 }

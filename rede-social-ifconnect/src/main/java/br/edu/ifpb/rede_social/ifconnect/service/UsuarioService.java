@@ -1,10 +1,10 @@
 package br.edu.ifpb.rede_social.ifconnect.service;
 
 import br.edu.ifpb.rede_social.ifconnect.entity.Usuario;
-import br.edu.ifpb.rede_social.ifconnect.repository.jpa.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import br.edu.ifpb.rede_social.ifconnect.repository.jpa.UsuarioDAO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,44 +14,44 @@ import java.util.Optional;
 public class UsuarioService {
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private UsuarioDAO usuarioDAO; // Variável injetada
 
     @Transactional
     public Usuario criarUsuario(Usuario usuario) {
-        if (usuarioRepository.existsByEmail(usuario.getEmail())) {
+        if (usuarioDAO.existsByEmail(usuario.getEmail())) {
             throw new IllegalArgumentException("Email já cadastrado.");
         }
         usuario.setDataCadastro(LocalDate.now());
-        return usuarioRepository.save(usuario);
+        return usuarioDAO.save(usuario);
     }
 
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarUsuarioPorId(Long id) {
-        return usuarioRepository.findById(id);
+        return usuarioDAO.findById(id); // CORRIGIDO: usa usuarioDAO
     }
 
     @Transactional(readOnly = true)
     public Optional<Usuario> buscarUsuarioPorEmail(String email) {
-        return usuarioRepository.findByEmail(email);
+        return usuarioDAO.findByEmail(email); // CORRIGIDO: usa usuarioDAO
     }
 
     @Transactional(readOnly = true)
     public List<Usuario> listarTodosUsuarios() {
-        return usuarioRepository.findAll();
+        return usuarioDAO.findAll(); // CORRIGIDO: usa usuarioDAO
     }
 
     @Transactional
     public Usuario atualizarUsuario(Long id, Usuario usuarioAtualizado) {
-        return usuarioRepository.findById(id).map(usuario -> {
+        return usuarioDAO.findById(id).map(usuario -> { // CORRIGIDO: usa usuarioDAO
             usuario.setNome(usuarioAtualizado.getNome());
             usuario.setEmail(usuarioAtualizado.getEmail());
             // Não atualiza senha aqui diretamente, deve ser um método separado para segurança
-            return usuarioRepository.save(usuario);
+            return usuarioDAO.save(usuario); // CORRIGIDO: usa usuarioDAO
         }).orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado com ID: " + id));
     }
 
     @Transactional
     public void deletarUsuario(Long id) {
-        usuarioRepository.deleteById(id);
+        usuarioDAO.deleteById(id); // CORRIGIDO: usa usuarioDAO
     }
 }
